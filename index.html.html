@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DIP & CIA">
+<meta name="theme-color" content="1F3864">
+<title>DIP & CIA — Gestión</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --brand:    #1F3864;
+    --mid:      #2E5FA3;
+    --accent:   #E8A838;
+    --accent2:  #C0392B;
+    --green:    #1E8449;
+    --purple:   #884EA0;
+    --bg:       #F4F2EE;
+    --card:     #FFFFFF;
+    --border:   #E8E4DC;
+    --text:     #1A1A1A;
+    --muted:    #888070;
+    --input-bg: #F9F7F4;
+    --radius:   16px;
+    --shadow:   0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+  /* ── Layout ── */
+  #app { display: flex; flex-direction: column; height: 100vh; max-width: 480px; margin: 0 auto; position: relative; }
+  #header { background: var(--brand); color: white; padding: 14px 20px 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  #header h1 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  #header .sub { font-size: 11px; opacity: 0.6; font-weight: 500; margin-top: 1px; }
+  #header .sync-btn { background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  #header .sync-btn:hover { background: rgba(255,255,255,0.25); }
+
+  #content { flex: 1; overflow-y: auto; padding: 16px 16px 100px; }
+  #nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: white; border-top: 1px solid var(--border); display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 4px 8px; cursor: pointer; border: none; background: none; transition: color 0.2s; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+  .nav-item.active { color: var(--accent); }
+  .nav-item .icon { font-size: 22px; line-height: 1; }
+  .nav-item .label { font-size: 10px; font-weight: 700; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .nav-item .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin-top: 3px; opacity: 0; transition: opacity 0.2s; }
+  .nav-item.active .dot { opacity: 1; }
+
+  /* ── Cards ── */
+  .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden; }
+  .card-header { padding: 14px 16px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .card-body { padding: 16px; }
+
+  /* ── Stat cards ── */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .stats-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .stat-card { border-radius: var(--radius); padding: 14px 12px; color: white; }
+  .stat-card .emoji { font-size: 20px; margin-bottom: 6px; }
+  .stat-card .value { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; line-height: 1; }
+  .stat-card .label { font-size: 10px; font-weight: 600; opacity: 0.75; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+  /* ── Forms ── */
+  .form-group { margin-bottom: 12px; }
+  .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 5px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  input, select, textarea {
+    width: 100%; background: var(--input-bg); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 11px 14px; font-size: 14px; font-weight: 500;
+    font-family: 'DM Sans', sans-serif; color: var(--text); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s; appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,168,56,0.15); }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+  /* ── Buttons ── */
+  .btn { border: none; border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; active-scale: 0.97; width: 100%; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #d4972e; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-danger { background: var(--accent2); color: white; font-size: 12px; padding: 6px 12px; width: auto; border-radius: 8px; }
+  .btn-ghost { background: var(--input-bg); color: var(--muted); }
+
+  /* ── Total box ── */
+  .total-box { background: linear-gradient(135deg, #FFF8EC, #FFF3D6); border: 1.5px solid #F0C866; border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .total-box .tl { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+  .total-box .tv { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent2); }
+
+  /* ── List items ── */
+  .list-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: var(--input-bg); margin-bottom: 8px; }
+  .list-item .emoji { font-size: 24px; flex-shrink: 0; }
+  .list-item .info { flex: 1; min-width: 0; }
+  .list-item .name { font-size: 13px; font-weight: 700; }
+  .list-item .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .list-item .amount { text-align: right; flex-shrink: 0; }
+  .list-item .amount .main { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; }
+  .list-item .amount .sub { font-size: 10px; color: var(--muted); }
+  .delete-btn { background: none; border: none; color: #CCC; cursor: pointer; font-size: 16px; padding: 4px; transition: color 0.2s; }
+  .delete-btn:hover { color: var(--accent2); }
+
+  /* ── Badge ── */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; color: white; }
+
+  /* ── Stock cards ── */
+  .stock-card { border-radius: var(--radius); padding: 16px; color: white; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .stock-card .left .prod { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
+  .stock-card .left .ctu { font-size: 11px; opacity: 0.65; margin-top: 3px; }
+  .stock-card .right .num { font-family: 'Syne', sans-serif; font-size: 40px; font-weight: 800; line-height: 1; }
+  .stock-card .right .unit { font-size: 11px; opacity: 0.65; }
+  .alert-badge { background: rgba(255,255,255,0.2); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; margin-top: 4px; display: inline-block; }
+
+  /* ── Bar chart ── */
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-row .bar-label { font-size: 11px; color: var(--muted); width: 80px; flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.6s ease; }
+  .bar-row .bar-val { font-size: 11px; font-weight: 700; color: var(--text); width: 80px; text-align: right; flex-shrink: 0; }
+
+  /* ── Login screen ── */
+  #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 40px 24px; text-align: center; background: var(--brand); }
+  #login-screen .logo { font-family: 'Syne', sans-serif; font-size: 48px; font-weight: 800; color: white; margin-bottom: 8px; }
+  #login-screen .sub { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 48px; }
+  #login-screen .login-btn { background: var(--accent); color: white; border: none; border-radius: 16px; padding: 16px 32px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
+  #login-screen .login-btn:hover { background: #d4972e; }
+  #login-screen .note { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 24px; max-width: 280px; }
+
+  /* ── Toast ── */
+  #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--text); color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; z-index: 1000; transition: transform 0.3s ease; white-space: nowrap; }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Loading ── */
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+  .empty-state p { font-size: 14px; font-weight: 500; }
+
+  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin: 16px 0 8px; }
+
+  .prod-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .prod-filter button { border: 1.5px solid var(--border); background: white; border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .prod-filter button.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+  .highlight-box { background: linear-gradient(135deg, #EBF5EE, #D5EBD9); border: 1.5px solid #A8D5B0; border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; }
+  .highlight-box .hl { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--green); }
+  .highlight-box .sl { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="logo">DIP & CIA.</div>
+  <div class="sub">Sistema de gestión</div>
+  <button class="login-btn" onclick="signIn()">
+    🔐 Ingresar con Google
+  </button>
+  <p class="note">Tus datos se guardan en Google Drive, en tu cuenta personal.</p>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <div id="header">
+    <div>
+      <h1>DIP & CIA.</h1>
+      <div class="sub" id="header-sub">Gestión de negocio</div>
+    </div>
+    <button class="sync-btn" onclick="syncAll()" id="sync-btn">⟳ Sync</button>
+  </div>
+  <div id="content"></div>
+  <nav id="nav">
+    <button class="nav-item active" onclick="goTo('dashboard')" id="nav-dashboard">
+      <span class="icon">📊</span><span class="label">Dashboard</span><div class="dot"></div>
+    </button>
+    <button class="nav-item" onclick="goTo('ventas')" id="nav-ventas">
+      <span class="icon">💰</span><span class="label">Ventas</span><div class="dot"></div>
+    </button>
+    <button class="nav-item" onclick="goTo('costos')" id="nav-costos">
+      <span class="icon">📤</span><span class="label">Costos</span><div class="dot"></div>
+    </button>
+    <button class="nav-item" onclick="goTo('stock')" id="nav-stock">
+      <span class="icon">📦</span><span class="label">Stock</span><div class="dot"></div>
+    </button>
+    <button class="nav-item" onclick="goTo('lotes')" id="nav-lotes">
+      <span class="icon">🏭</span><span class="label">Lotes</span><div class="dot"></div>
+    </button>
+  </nav>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const CLIENT_ID   = '953544179667-l39sj8pidv4e2kttvqk11b1eugradjvh.apps.googleusercontent.com';
+const SHEET_ID    = '12mgIm8zvRnsiFYTCie7ZeAGBfXtgsUTDwIL7MQK49yg';
+const SCOPES      = 'https://www.googleapis.com/auth/spreadsheets';
+const SHEET_NAMES = { ventas: 'Ventas', costos: 'Costos', lotes: 'Lotes', ajustes: 'Ajustes' };
+
+// ── PRODUCTOS ─────────────────────────────────────────────────────────────────
+const PRODUCTOS = [
+  { id:'tremenda', nombre:'TREMENDA', peso:'250g', emoji:'🍅', color:'#C0392B', ctu:4104 },
+  { id:'chill',    nombre:'CHILL',    peso:'360g', emoji:'🌶️', color:'#884EA0', ctu:4142 },
+  { id:'chucrut',  nombre:'CHUCRUT',  peso:'360g', emoji:'🥬', color:'#1E8449', ctu:3229 },
+];
+
+const CANALES = ['B2C Directo','Minorista','Mayorista','E-commerce (MP)','Feria'];
+const CATEGORIAS = ['Insumos','Packaging','Logística','Marketing','Feria','Servicios','Otros'];
+
+const PRECIOS = {
+  tremenda: {'B2C Directo':10528,'Minorista':7829,'Mayorista':6361,'E-commerce (MP)':12472,'Feria':9000},
+  chill:    {'B2C Directo':10623,'Minorista':7902,'Mayorista':6421,'E-commerce (MP)':12585,'Feria':9500},
+  chucrut:  {'B2C Directo':8200, 'Minorista':6100,'Mayorista':4900,'E-commerce (MP)':9800, 'Feria':7500},
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let accessToken = null;
+let state = { ventas:[], costos:[], lotes:[], ajustes:[] };
+let currentTab = 'dashboard';
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+const fmt = n => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n||0);
+const fmtN = n => new Intl.NumberFormat('es-AR').format(n||0);
+const today = () => new Date().toISOString().split('T')[0];
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2);
+const getProd = id => PRODUCTOS.find(p=>p.id===id);
+const mesActual = () => today().slice(0,7);
+
+function toast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── GOOGLE AUTH ───────────────────────────────────────────────────────────────
+function signIn() {
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: window.location.href.split('?')[0].split('#')[0],
+    response_type: 'token',
+    scope: SCOPES,
+    prompt: 'select_account'
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
+
+function checkAuth() {
+  const hash = window.location.hash;
+  if (hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.slice(1));
+    accessToken = params.get('access_token');
+    const expIn = parseInt(params.get('expires_in')||3600);
+    sessionStorage.setItem('dipcia_token', accessToken);
+    sessionStorage.setItem('dipcia_token_exp', Date.now() + expIn*1000);
+    history.replaceState(null,'',window.location.pathname);
+  } else {
+    const stored = sessionStorage.getItem('dipcia_token');
+    const exp = parseInt(sessionStorage.getItem('dipcia_token_exp')||0);
+    if (stored && Date.now() < exp) accessToken = stored;
+  }
+  if (accessToken) showApp();
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  initSheets().then(()=>{ loadAll().then(()=>render()); });
+}
+
+// ── SHEETS API ────────────────────────────────────────────────────────────────
+async function sheetsReq(method, path, body) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}${path}`;
+  const res = await fetch(url, {
+    method,
+    headers: { 'Authorization':'Bearer '+accessToken, 'Content-Type':'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+async function initSheets() {
+  try {
+    const info = await sheetsReq('GET','?fields=sheets.properties.title');
+    const existing = (info.sheets||[]).map(s=>s.properties.title);
+    const needed = Object.values(SHEET_NAMES).filter(n=>!existing.includes(n));
+    if (needed.length === 0) return;
+
+    const requests = needed.map(title=>({addSheet:{properties:{title}}}));
+    await sheetsReq('POST',':batchUpdate',{requests});
+
+    // Add headers
+    const headerData = [];
+    if (needed.includes('Ventas'))
+      headerData.push({range:'Ventas!A1:H1',values:[['ID','Fecha','Producto','Canal','Cantidad','Precio','Total','Nota']]});
+    if (needed.includes('Costos'))
+      headerData.push({range:'Costos!A1:G1',values:[['ID','Fecha','Categoria','Descripcion','Monto','Producto','Nota']]});
+    if (needed.includes('Lotes'))
+      headerData.push({range:'Lotes!A1:F1',values:[['ID','Fecha','Producto','Unidades','CostoLote','Nota']]});
+    if (needed.includes('Ajustes'))
+      headerData.push({range:'Ajustes!A1:D1',values:[['ID','Fecha','Producto','Cantidad']]});
+
+    if (headerData.length)
+      await sheetsReq('PUT','/values:batchUpdate',{valueInputOption:'RAW',data:headerData});
+
+    toast('✅ Hojas creadas en Google Sheets');
+  } catch(e) { console.error('initSheets',e); }
+}
+
+async function appendRow(sheet, row) {
+  await sheetsReq('POST',`/values/${sheet}!A:Z:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+    {values:[row]});
+}
+
+async function deleteRow(sheet, rowIndex) {
+  // rowIndex is 0-based data index (after header), so sheet row = rowIndex + 2
+  const sheetId = await getSheetId(sheet);
+  await sheetsReq('POST',':batchUpdate',{requests:[{deleteDimension:{range:{
+    sheetId, dimension:'ROWS', startIndex: rowIndex+1, endIndex: rowIndex+2
+  }}}]});
+}
+
+async function getSheetId(sheetName) {
+  const info = await sheetsReq('GET','?fields=sheets.properties');
+  const sh = info.sheets.find(s=>s.properties.title===sheetName);
+  return sh ? sh.properties.sheetId : null;
+}
+
+async function readSheet(sheet) {
+  try {
+    const res = await sheetsReq('GET',`/values/${sheet}!A:Z`);
+    const rows = res.values||[];
+    if (rows.length <= 1) return [];
+    const headers = rows[0];
+    return rows.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h,i)=>{ obj[h]=row[i]||''; });
+      return obj;
+    });
+  } catch(e) { console.error('readSheet',sheet,e); return []; }
+}
+
+async function loadAll() {
+  const btn = document.getElementById('sync-btn');
+  if (btn) btn.innerHTML = '<span class="spinner"></span> Cargando...';
+  try {
+    const [v,c,l,a] = await Promise.all([
+      readSheet('Ventas'), readSheet('Costos'),
+      readSheet('Lotes'), readSheet('Ajustes')
+    ]);
+    state.ventas  = v.map(r=>({...r, Cantidad:parseFloat(r.Cantidad)||0, Precio:parseFloat(r.Precio)||0, Total:parseFloat(r.Total)||0}));
+    state.costos  = c.map(r=>({...r, Monto:parseFloat(r.Monto)||0}));
+    state.lotes   = l.map(r=>({...r, Unidades:parseFloat(r.Unidades)||0, CostoLote:parseFloat(r.CostoLote)||0}));
+    state.ajustes = a.map(r=>({...r, Cantidad:parseFloat(r.Cantidad)||0}));
+    toast('✅ Datos sincronizados');
+  } catch(e) { toast('⚠️ Error al cargar datos'); console.error(e); }
+  if (btn) btn.innerHTML = '⟳ Sync';
+}
+
+async function syncAll() { await loadAll(); render(); }
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function goTo(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('nav-'+tab)?.classList.add('active');
+  render();
+}
+
+function render() {
+  const c = document.getElementById('content');
+  if      (currentTab==='dashboard') c.innerHTML = renderDashboard();
+  else if (currentTab==='ventas')    c.innerHTML = renderVentas();
+  else if (currentTab==='costos')    c.innerHTML = renderCostos();
+  else if (currentTab==='stock')     c.innerHTML = renderStock();
+  else if (currentTab==='lotes')     c.innerHTML = renderLotes();
+}
+
+// ── COMPUTED ──────────────────────────────────────────────────────────────────
+function stockProd(prodId) {
+  const producido = state.lotes.filter(l=>l.Producto===prodId).reduce((s,l)=>s+l.Unidades,0);
+  const vendido   = state.ventas.filter(v=>v.Producto===prodId).reduce((s,v)=>s+v.Cantidad,0);
+  const ajustado  = state.ajustes.filter(a=>a.Producto===prodId).reduce((s,a)=>s+a.Cantidad,0);
+  return Math.max(0, producido - vendido + ajustado);
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const mes = mesActual();
+  const ingMes  = state.ventas.filter(v=>v.Fecha?.slice(0,7)===mes).reduce((s,v)=>s+v.Total,0);
+  const costMes = state.costos.filter(c=>c.Fecha?.slice(0,7)===mes).reduce((s,c)=>s+c.Monto,0);
+  const margen  = ingMes - costMes;
+  const ingTot  = state.ventas.reduce((s,v)=>s+v.Total,0);
+  const costTot = state.costos.reduce((s,c)=>s+c.Monto,0);
+  const uniTot  = state.ventas.reduce((s,v)=>s+v.Cantidad,0);
+
+  const prodRows = PRODUCTOS.map(p=>({
+    ...p,
+    unid: state.ventas.filter(v=>v.Producto===p.id).reduce((s,v)=>s+v.Cantidad,0),
+    ing:  state.ventas.filter(v=>v.Producto===p.id).reduce((s,v)=>s+v.Total,0),
+  })).filter(p=>p.unid>0).sort((a,b)=>b.ing-a.ing);
+
+  const canalRows = CANALES.map(c=>({
+    canal:c,
+    total: state.ventas.filter(v=>v.Canal===c).reduce((s,v)=>s+v.Total,0),
+    unid:  state.ventas.filter(v=>v.Canal===c).reduce((s,v)=>s+v.Cantidad,0),
+  })).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
+
+  return `
+  <p class="section-title">Este mes</p>
+  <div class="stats-grid three">
+    <div class="stat-card" style="background:var(--green)"><div class="emoji">💰</div><div class="value">${fmt(ingMes)}</div><div class="label">Ingresos</div></div>
+    <div class="stat-card" style="background:var(--accent2)"><div class="emoji">📤</div><div class="value">${fmt(costMes)}</div><div class="label">Gastos</div></div>
+    <div class="stat-card" style="background:${margen>=0?'var(--mid)':'var(--purple)'}"><div class="emoji">${margen>=0?'📈':'📉'}</div><div class="value">${fmt(margen)}</div><div class="label">Margen</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Acumulado total</div>
+    <div class="card-body">
+      <div class="stats-grid">
+        <div class="highlight-box"><div class="hl">${fmt(ingTot)}</div><div class="sl">Ingresos totales</div></div>
+        <div class="highlight-box" style="background:linear-gradient(135deg,#FDEBD0,#FAD7A0);border-color:#F0B870"><div class="hl" style="color:var(--accent2)">${fmt(costTot)}</div><div class="sl">Gastos totales</div></div>
+      </div>
+      <div class="stats-grid">
+        <div class="highlight-box" style="background:linear-gradient(135deg,#EAF4FB,#D6EAF8);border-color:#A9CCE3"><div class="hl" style="color:var(--mid)">${fmt(ingTot-costTot)}</div><div class="sl">Resultado neto</div></div>
+        <div class="highlight-box" style="background:linear-gradient(135deg,#F4ECF7,#E8DAEF);border-color:#C39BD3"><div class="hl" style="color:var(--purple)">${fmtN(uniTot)}</div><div class="sl">Unidades vendidas</div></div>
+      </div>
+    </div>
+  </div>
+
+  ${prodRows.length ? `
+  <div class="card">
+    <div class="card-header">Por producto</div>
+    <div class="card-body">
+      ${prodRows.map(p=>`
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>${p.emoji}</span>
+              <span style="font-size:13px;font-weight:700;color:${p.color}">${p.nombre}</span>
+              <span style="font-size:11px;color:var(--muted)">${fmtN(p.unid)} unid</span>
+            </div>
+            <span style="font-size:13px;font-weight:800">${fmt(p.ing)}</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:${ingTot?Math.min(100,(p.ing/ingTot)*100):0}%;background:${p.color}"></div></div>
+        </div>`).join('')}
+    </div>
+  </div>` : ''}
+
+  ${canalRows.length ? `
+  <div class="card">
+    <div class="card-header">Por canal</div>
+    <div class="card-body">
+      ${canalRows.map(({canal,total,unid})=>`
+        <div class="list-item" style="background:var(--input-bg)">
+          <div class="info"><div class="name">${escHtml(canal)}</div><div class="meta">${fmtN(unid)} unidades</div></div>
+          <div class="amount"><div class="main">${fmt(total)}</div></div>
+        </div>`).join('')}
+    </div>
+  </div>` : ''}
+
+  ${state.ventas.length===0&&state.costos.length===0?`
+  <div class="empty-state"><div class="icon">📊</div><p>Aún no hay datos.<br>Empezá registrando ventas y gastos.</p></div>` : ''}
+  `;
+}
+
+// ── VENTAS ────────────────────────────────────────────────────────────────────
+function renderVentas() {
+  const totalHoy  = state.ventas.filter(v=>v.Fecha===today()).reduce((s,v)=>s+v.Total,0);
+  const totalMes  = state.ventas.filter(v=>v.Fecha?.slice(0,7)===mesActual()).reduce((s,v)=>s+v.Total,0);
+  const uniTot    = state.ventas.reduce((s,v)=>s+v.Cantidad,0);
+
+  return `
+  <div class="stats-grid three">
+    <div class="stat-card" style="background:var(--accent2)"><div class="emoji">📅</div><div class="value">${fmt(totalHoy)}</div><div class="label">Hoy</div></div>
+    <div class="stat-card" style="background:var(--green)"><div class="emoji">📈</div><div class="value">${fmt(totalMes)}</div><div class="label">Este mes</div></div>
+    <div class="stat-card" style="background:var(--mid)"><div class="emoji">📦</div><div class="value">${fmtN(uniTot)}</div><div class="label">Unidades</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">➕ Nueva Venta</div>
+    <div class="card-body">
+      <div class="form-grid form-group">
+        <div><label class="form-label">Fecha</label><input type="date" id="v-fecha" value="${today()}"></div>
+        <div><label class="form-label">Producto</label>
+          <select id="v-prod" onchange="vUpdatePrecio()">
+            ${PRODUCTOS.map(p=>`<option value="${p.id}">${p.emoji} ${p.nombre}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Canal</label>
+        <select id="v-canal" onchange="vUpdatePrecio()">
+          ${CANALES.map(c=>`<option>${escHtml(c)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-grid form-group">
+        <div><label class="form-label">Cantidad</label><input type="number" id="v-cant" value="1" min="1" oninput="vUpdateTotal()"></div>
+        <div><label class="form-label">Precio unit. ($)</label><input type="number" id="v-precio" value="${PRECIOS.tremenda['B2C Directo']}" oninput="vUpdateTotal()"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Nota (opcional)</label><input type="text" id="v-nota" placeholder="ej: feria, cliente X..."></div>
+      <div class="total-box"><span class="tl">Total</span><span class="tv" id="v-total">${fmt(PRECIOS.tremenda['B2C Directo'])}</span></div>
+      <button class="btn btn-primary" onclick="registrarVenta()" id="btn-v">✓ Registrar Venta</button>
+    </div>
+  </div>
+
+  <p class="section-title">Historial</p>
+  ${state.ventas.length===0 ? '<div class="empty-state"><div class="icon">💰</div><p>Sin ventas registradas</p></div>' :
+    state.ventas.slice(0,50).map((v,i)=>{
+      const p = getProd(v.Producto);
+      return `<div class="list-item">
+        <span class="emoji">${p?.emoji||'❓'}</span>
+        <div class="info">
+          <div class="name" style="color:${p?.color||'#333'}">${p?.nombre||v.Producto} · <span style="color:var(--muted);font-weight:500;font-size:12px">${escHtml(v.Canal)}</span></div>
+          <div class="meta">${escHtml(v.Fecha)} · ${fmtN(v.Cantidad)} unid × ${fmt(v.Precio)}${v.Nota?` · <em>${escHtml(v.Nota)}</em>`:''}</div>
+        </div>
+        <div class="amount">
+          <div class="main">${fmt(v.Total)}</div>
+          <button class="delete-btn" onclick="eliminarVenta(${i})">🗑</button>
+        </div>
+      </div>`;
+    }).join('')
+  }`;
+}
+
+function vUpdatePrecio() {
+  const prod  = document.getElementById('v-prod')?.value;
+  const canal = document.getElementById('v-canal')?.value;
+  if (prod && canal && PRECIOS[prod]?.[canal]) {
+    document.getElementById('v-precio').value = PRECIOS[prod][canal];
+  }
+  vUpdateTotal();
+}
+
+function vUpdateTotal() {
+  const cant   = parseFloat(document.getElementById('v-cant')?.value)||0;
+  const precio = parseFloat(document.getElementById('v-precio')?.value)||0;
+  const el = document.getElementById('v-total');
+  if (el) el.textContent = fmt(cant*precio);
+}
+
+async function registrarVenta() {
+  const fecha  = document.getElementById('v-fecha').value;
+  const prod   = document.getElementById('v-prod').value;
+  const canal  = document.getElementById('v-canal').value;
+  const cant   = parseFloat(document.getElementById('v-cant').value)||0;
+  const precio = parseFloat(document.getElementById('v-precio').value)||0;
+  const nota   = document.getElementById('v-nota').value;
+  if (!cant||!precio) return toast('⚠️ Completá cantidad y precio');
+
+  const btn = document.getElementById('btn-v');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Guardando...';
+  const id = uid();
+  const row = [id, fecha, prod, canal, cant, precio, cant*precio, nota];
+  try {
+    await appendRow('Ventas', row);
+    state.ventas.unshift({ID:id,Fecha:fecha,Producto:prod,Canal:canal,Cantidad:cant,Precio:precio,Total:cant*precio,Nota:nota});
+    toast('✅ Venta registrada');
+    render();
+  } catch(e) { toast('❌ Error al guardar'); btn.disabled=false; btn.innerHTML='✓ Registrar Venta'; }
+}
+
+async function eliminarVenta(idx) {
+  if (!confirm('¿Eliminar esta venta?')) return;
+  try {
+    await deleteRow('Ventas', idx);
+    state.ventas.splice(idx,1);
+    toast('🗑 Venta eliminada'); render();
+  } catch(e) { toast('❌ Error al eliminar'); }
+}
+
+// ── COSTOS ────────────────────────────────────────────────────────────────────
+function renderCostos() {
+  const totalMes = state.costos.filter(c=>c.Fecha?.slice(0,7)===mesActual()).reduce((s,c)=>s+c.Monto,0);
+  const totalTot = state.costos.reduce((s,c)=>s+c.Monto,0);
+
+  const porCat = CATEGORIAS.map(cat=>({
+    cat, total: state.costos.filter(c=>c.Categoria===cat).reduce((s,c)=>s+c.Monto,0)
+  })).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
+
+  return `
+  <div class="stats-grid">
+    <div class="stat-card" style="background:var(--accent2)"><div class="emoji">📤</div><div class="value">${fmt(totalMes)}</div><div class="label">Este mes</div></div>
+    <div class="stat-card" style="background:var(--mid)"><div class="emoji">📊</div><div class="value">${fmt(totalTot)}</div><div class="label">Acumulado</div></div>
+  </div>
+
+  ${porCat.length?`
+  <div class="card">
+    <div class="card-header">Por categoría</div>
+    <div class="card-body">
+      ${porCat.map(({cat,total})=>`
+        <div class="bar-row">
+          <span class="bar-label">${escHtml(cat)}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${totalTot?Math.min(100,(total/totalTot)*100):0}%"></div></div>
+          <span class="bar-val">${fmt(total)}</span>
+        </div>`).join('')}
+    </div>
+  </div>` : ''}
+
+  <div class="card">
+    <div class="card-header">➕ Nuevo Gasto</div>
+    <div class="card-body">
+      <div class="form-grid form-group">
+        <div><label class="form-label">Fecha</label><input type="date" id="c-fecha" value="${today()}"></div>
+        <div><label class="form-label">Categoría</label>
+          <select id="c-cat">${CATEGORIAS.map(c=>`<option>${escHtml(c)}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Descripción</label><input type="text" id="c-desc" placeholder="ej: tomates, flete, etiquetas..."></div>
+      <div class="form-grid form-group">
+        <div><label class="form-label">Monto ($)</label><input type="number" id="c-monto" placeholder="0"></div>
+        <div><label class="form-label">Producto</label>
+          <select id="c-prod">
+            <option value="general">General</option>
+            ${PRODUCTOS.map(p=>`<option value="${p.id}">${p.emoji} ${p.nombre}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="registrarCosto()" id="btn-c">✓ Registrar Gasto</button>
+    </div>
+  </div>
+
+  <p class="section-title">Historial</p>
+  ${state.costos.length===0 ? '<div class="empty-state"><div class="icon">📤</div><p>Sin gastos registrados</p></div>' :
+    state.costos.slice(0,50).map((c,i)=>{
+      const p = getProd(c.Producto);
+      return `<div class="list-item">
+        <div class="info">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:3px">
+            <span class="badge" style="background:var(--mid)">${escHtml(c.Categoria)}</span>
+            ${p?`<span class="badge" style="background:${p.color}">${p.nombre}</span>`:''}
+          </div>
+          <div class="name">${escHtml(c.Descripcion)}</div>
+          <div class="meta">${escHtml(c.Fecha)}</div>
+        </div>
+        <div class="amount">
+          <div class="main">${fmt(c.Monto)}</div>
+          <button class="delete-btn" onclick="eliminarCosto(${i})">🗑</button>
+        </div>
+      </div>`;
+    }).join('')
+  }`;
+}
+
+async function registrarCosto() {
+  const fecha = document.getElementById('c-fecha').value;
+  const cat   = document.getElementById('c-cat').value;
+  const desc  = document.getElementById('c-desc').value;
+  const monto = parseFloat(document.getElementById('c-monto').value)||0;
+  const prod  = document.getElementById('c-prod').value;
+  if (!desc||!monto) return toast('⚠️ Completá descripción y monto');
+
+  const btn = document.getElementById('btn-c');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Guardando...';
+  const id = uid();
+  try {
+    await appendRow('Costos',[id,fecha,cat,desc,monto,prod,'']);
+    state.costos.unshift({ID:id,Fecha:fecha,Categoria:cat,Descripcion:desc,Monto:monto,Producto:prod,Nota:''});
+    toast('✅ Gasto registrado'); render();
+  } catch(e) { toast('❌ Error al guardar'); btn.disabled=false; btn.innerHTML='✓ Registrar Gasto'; }
+}
+
+async function eliminarCosto(idx) {
+  if (!confirm('¿Eliminar este gasto?')) return;
+  try {
+    await deleteRow('Costos',idx);
+    state.costos.splice(idx,1);
+    toast('🗑 Gasto eliminado'); render();
+  } catch(e) { toast('❌ Error al eliminar'); }
+}
+
+// ── STOCK ─────────────────────────────────────────────────────────────────────
+function renderStock() {
+  return `
+  ${PRODUCTOS.map(p=>{
+    const s = stockProd(p.id);
+    return `<div class="stock-card" style="background:${p.color}">
+      <div class="left">
+        <div style="font-size:28px">${p.emoji}</div>
+        <div class="prod">${p.nombre} ${p.peso}</div>
+        <div class="ctu">CTU: ${fmt(p.ctu)}</div>
+        ${s<10?`<span class="alert-badge">⚠️ Stock bajo</span>`:''}
+      </div>
+      <div class="right" style="text-align:right">
+        <div class="num">${fmtN(s)}</div>
+        <div class="unit">unidades</div>
+      </div>
+    </div>`;
+  }).join('')}
+
+  <div class="card">
+    <div class="card-header">🔧 Ajuste de Stock</div>
+    <div class="card-body">
+      <div class="form-group"><label class="form-label">Producto</label>
+        <select id="a-prod">${PRODUCTOS.map(p=>`<option value="${p.id}">${p.emoji} ${p.nombre}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label class="form-label">Cantidad (+/-)</label><input type="number" id="a-cant" placeholder="ej: 10 o -5"></div>
+      <button class="btn btn-primary" onclick="registrarAjuste()">✓ Aplicar Ajuste</button>
+    </div>
+  </div>`;
+}
+
+async function registrarAjuste() {
+  const prod = document.getElementById('a-prod').value;
+  const cant = parseFloat(document.getElementById('a-cant').value)||0;
+  if (!cant) return toast('⚠️ Ingresá una cantidad');
+  try {
+    await appendRow('Ajustes',[uid(),today(),prod,cant]);
+    state.ajustes.push({Producto:prod,Cantidad:cant});
+    toast('✅ Stock ajustado'); render();
+  } catch(e) { toast('❌ Error al guardar'); }
+}
+
+// ── LOTES ─────────────────────────────────────────────────────────────────────
+function renderLotes() {
+  const totalProd = state.lotes.reduce((s,l)=>s+l.Unidades,0);
+  return `
+  <div class="stat-card" style="background:var(--brand);margin-bottom:12px;padding:16px 20px">
+    <div class="emoji">🏭</div>
+    <div class="value">${fmtN(totalProd)}</div>
+    <div class="label">Unidades producidas (total)</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">➕ Registrar Lote</div>
+    <div class="card-body">
+      <div class="form-grid form-group">
+        <div><label class="form-label">Fecha</label><input type="date" id="l-fecha" value="${today()}"></div>
+        <div><label class="form-label">Producto</label>
+          <select id="l-prod">${PRODUCTOS.map(p=>`<option value="${p.id}">${p.emoji} ${p.nombre}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="form-grid form-group">
+        <div><label class="form-label">Unidades producidas</label><input type="number" id="l-unid" value="48"></div>
+        <div><label class="form-label">Costo real lote ($)</label><input type="number" id="l-costo" placeholder="opcional"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Nota</label><input type="text" id="l-nota" placeholder="ej: ajuste de receta..."></div>
+      <button class="btn btn-primary" onclick="registrarLote()" id="btn-l">✓ Registrar Lote</button>
+    </div>
+  </div>
+
+  <p class="section-title">Historial de Lotes</p>
+  ${state.lotes.length===0 ? '<div class="empty-state"><div class="icon">🏭</div><p>Sin lotes registrados</p></div>' :
+    state.lotes.slice(0,30).map((l,i)=>{
+      const p = getProd(l.Producto);
+      const cxu = l.CostoLote&&l.Unidades ? l.CostoLote/l.Unidades : null;
+      return `<div class="list-item">
+        <span class="emoji">${p?.emoji||'❓'}</span>
+        <div class="info">
+          <div class="name" style="color:${p?.color}">${p?.nombre||l.Producto}</div>
+          <div class="meta">${escHtml(l.Fecha)}${cxu?` · CTU real: ${fmt(cxu)}`:''}${l.Nota?` · <em>${escHtml(l.Nota)}</em>`:''}</div>
+        </div>
+        <div class="amount">
+          <div class="main" style="color:${p?.color};font-size:22px">${fmtN(l.Unidades)}</div>
+          <div class="sub">unid</div>
+          <button class="delete-btn" onclick="eliminarLote(${i})">🗑</button>
+        </div>
+      </div>`;
+    }).join('')
+  }`;
+}
+
+async function registrarLote() {
+  const fecha = document.getElementById('l-fecha').value;
+  const prod  = document.getElementById('l-prod').value;
+  const unid  = parseFloat(document.getElementById('l-unid').value)||0;
+  const costo = parseFloat(document.getElementById('l-costo').value)||0;
+  const nota  = document.getElementById('l-nota').value;
+  if (!unid) return toast('⚠️ Ingresá las unidades producidas');
+
+  const btn = document.getElementById('btn-l');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Guardando...';
+  const id = uid();
+  try {
+    await appendRow('Lotes',[id,fecha,prod,unid,costo,nota]);
+    state.lotes.unshift({ID:id,Fecha:fecha,Producto:prod,Unidades:unid,CostoLote:costo,Nota:nota});
+    toast('✅ Lote registrado'); render();
+  } catch(e) { toast('❌ Error al guardar'); btn.disabled=false; btn.innerHTML='✓ Registrar Lote'; }
+}
+
+async function eliminarLote(idx) {
+  if (!confirm('¿Eliminar este lote?')) return;
+  try {
+    await deleteRow('Lotes',idx);
+    state.lotes.splice(idx,1);
+    toast('🗑 Lote eliminado'); render();
+  } catch(e) { toast('❌ Error al eliminar'); }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+checkAuth();
+</script>
+</body>
+</html>
